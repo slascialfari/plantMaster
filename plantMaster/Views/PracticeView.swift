@@ -28,21 +28,24 @@ struct PracticeView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                switch stage {
-                case .landing:
-                    landing
-                case .question(let question):
-                    sessionContent(question: question)
-                case .summary:
-                    PracticeSummaryView(session: session)
+            VStack(spacing: 0) {
+                AppHeaderBar(title: title)
+
+                ScrollView {
+                    switch stage {
+                    case .landing:
+                        landing
+                    case .question(let question):
+                        sessionContent(question: question)
+                    case .summary:
+                        PracticeSummaryView(session: session)
+                    }
+                }
+                .safeAreaInset(edge: .bottom) {
+                    footer
                 }
             }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .bottom) {
-                footer
-            }
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
@@ -99,9 +102,12 @@ struct PracticeView: View {
     }
 
     private func footerBar<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding()
-            .background(.bar)
+        VStack(spacing: 0) {
+            Divider()
+            content()
+                .padding()
+        }
+        .background(Color(.systemBackground))
     }
 
     private var landing: some View {

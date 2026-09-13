@@ -15,25 +15,30 @@ struct PlantListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(groupedByCategory, id: \.category?.persistentModelID) { group in
-                    Section {
-                        ForEach(group.plants) { plant in
-                            NavigationLink {
-                                PlantDetailView(plant: plant)
-                            } label: {
-                                PlantRow(plant: plant)
+            VStack(spacing: 0) {
+                AppHeaderBar(title: "Planten Lijst")
+
+                List {
+                    ForEach(groupedByCategory, id: \.category?.persistentModelID) { group in
+                        Section {
+                            ForEach(group.plants) { plant in
+                                NavigationLink {
+                                    PlantDetailView(plant: plant)
+                                } label: {
+                                    PlantRow(plant: plant)
+                                }
                             }
-                        }
-                    } header: {
-                        if let category = group.category {
-                            Text(category.name.uppercased())
-                                .foregroundStyle(Color(hex: category.colorHex))
+                        } header: {
+                            if let category = group.category {
+                                Text(category.name.uppercased())
+                                    .foregroundStyle(Color(hex: category.colorHex))
+                            }
                         }
                     }
                 }
+                .listStyle(.plain)
             }
-            .navigationTitle("Planten Lijst")
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
