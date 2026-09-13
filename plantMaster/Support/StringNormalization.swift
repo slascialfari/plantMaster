@@ -15,4 +15,14 @@ enum StringNormalization {
     static func matches(_ input: String, _ target: String) -> Bool {
         normalize(input) == normalize(target)
     }
+
+    /// True when the input matches the whole target, or any one of its comma-separated
+    /// alternatives. Dutch names are stored like "veldesdoorn, Spaanse aak", and either
+    /// name alone should count as correct.
+    static func matchesAny(_ input: String, _ target: String) -> Bool {
+        if matches(input, target) { return true }
+        return target
+            .components(separatedBy: ",")
+            .contains { matches(input, $0) }
+    }
 }
