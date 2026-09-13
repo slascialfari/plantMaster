@@ -6,7 +6,7 @@ struct ContentView: View {
             Image(systemName: "leaf.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
-            Text("plantMaster")
+            Text("Hello, plantMaster!")
                 .font(.title)
                 .bold()
         }
