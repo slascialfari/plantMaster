@@ -10,23 +10,98 @@ struct PracticeView: View {
         allPlants.filter { $0.isActivated }
     }
 
+    private enum Stage {
+        case landing
+        case question(PracticeQuestion)
+        case summary
+    }
+
+    private var stage: Stage {
+        if hasStarted, let question = session.currentQuestion {
+            return .question(question)
+        } else if hasStarted, session.isFinished {
+            return .summary
+        } else {
+            return .landing
+        }
+    }
+
     var body: some View {
         NavigationStack {
-            Group {
-                if hasStarted, let question = session.currentQuestion {
-                    sessionContent(question: question)
-                } else if hasStarted, session.isFinished {
-                    PracticeSummaryView(
-                        session: session,
-                        onPracticeAgain: startSession,
-                        onDone: { hasStarted = false }
-                    )
-                } else {
+            ScrollView {
+                switch stage {
+                case .landing:
                     landing
+                case .question(let question):
+                    sessionContent(question: question)
+                case .summary:
+                    PracticeSummaryView(session: session)
                 }
             }
-            .navigationTitle("Practice")
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                footer
+            }
         }
+    }
+
+    private var title: String {
+        switch stage {
+        case .landing:
+            return "Practice"
+        case .question:
+            return "Question \(session.currentIndex + 1) of \(session.questions.count)"
+        case .summary:
+            return "Results"
+        }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        switch stage {
+        case .landing:
+            if activatedPlants.count >= PracticeSession.minimumActivatedPlants {
+                footerBar {
+                    Button("Start Practice") {
+                        startSession()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        case .question:
+            if session.hasAnswered {
+                footerBar {
+                    Button(session.currentIndex + 1 == session.questions.count ? "Finish" : "Next") {
+                        session.advance()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        case .summary:
+            footerBar {
+                VStack(spacing: 12) {
+                    Button("Practice Again") {
+                        startSession()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity)
+
+                    Button("Done") {
+                        hasStarted = false
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
+    private func footerBar<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding()
+            .background(.bar)
     }
 
     private var landing: some View {
@@ -50,14 +125,11 @@ struct PracticeView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
-
-                Button("Start Practice") {
-                    startSession()
-                }
-                .buttonStyle(.borderedProminent)
             }
         }
-        .padding()
+        .padding(.top, 40)
+        .padding(.horizontal)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -66,25 +138,11 @@ struct PracticeView: View {
             ProgressView(value: session.progress)
                 .padding(.horizontal)
 
-            Text("Question \(session.currentIndex + 1) of \(session.questions.count)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
             if question.kind.isMultipleChoice {
                 MultipleChoiceQuestionView(question: question, session: session)
             } else {
                 TypedAnswerQuestionView(question: question, session: session)
             }
-
-            if session.hasAnswered {
-                Button(session.currentIndex + 1 == session.questions.count ? "Finish" : "Next") {
-                    session.advance()
-                }
-                .buttonStyle(.borderedProminent)
-                .padding(.horizontal)
-            }
-
-            Spacer()
         }
         .padding(.top)
     }

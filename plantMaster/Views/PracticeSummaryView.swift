@@ -2,8 +2,6 @@ import SwiftUI
 
 struct PracticeSummaryView: View {
     let session: PracticeSession
-    let onPracticeAgain: () -> Void
-    let onDone: () -> Void
 
     var body: some View {
         VStack(spacing: 24) {
@@ -31,17 +29,6 @@ struct PracticeSummaryView: View {
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-
-            Spacer()
-
-            Button("Practice Again") {
-                onPracticeAgain()
-            }
-            .buttonStyle(.borderedProminent)
-
-            Button("Done") {
-                onDone()
             }
         }
         .padding()
