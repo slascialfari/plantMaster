@@ -8,25 +8,40 @@ struct RootTabView: View {
     }
 
     @State private var selectedTab: Tab = .list
+    @State private var keyboard = KeyboardObserver()
+    @State private var footerHeight: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                PlantListView()
-                    .opacity(selectedTab == .list ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .list)
+        GeometryReader { geo in
+            // The footer stays put and is covered by the keyboard, like a native tab bar.
+            // Only the content shrinks, by however much the keyboard reaches above the footer.
+            let keyboardOverlap = max(0, keyboard.height - footerHeight - geo.safeAreaInsets.bottom)
 
-                MapExploreView()
-                    .opacity(selectedTab == .map ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .map)
+            VStack(spacing: 0) {
+                ZStack {
+                    PlantListView()
+                        .opacity(selectedTab == .list ? 1 : 0)
+                        .allowsHitTesting(selectedTab == .list)
 
-                PracticeView()
-                    .opacity(selectedTab == .practice ? 1 : 0)
-                    .allowsHitTesting(selectedTab == .practice)
+                    MapExploreView()
+                        .opacity(selectedTab == .map ? 1 : 0)
+                        .allowsHitTesting(selectedTab == .map)
+
+                    PracticeView()
+                        .opacity(selectedTab == .practice ? 1 : 0)
+                        .allowsHitTesting(selectedTab == .practice)
+                }
+                .padding(.bottom, keyboardOverlap)
+
+                footerBar
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { newHeight in
+                        footerHeight = newHeight
+                    }
             }
-
-            footerBar
         }
+        .ignoresSafeArea(.keyboard)
     }
 
     private var footerBar: some View {

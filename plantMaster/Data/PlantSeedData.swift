@@ -124,8 +124,11 @@ enum PlantSeedData {
 
     @MainActor
     static func seedIfNeeded(context: ModelContext) {
-        let existing = try? context.fetch(FetchDescriptor<Plant>())
-        guard (existing?.isEmpty ?? true) else { return }
+        let existing = (try? context.fetch(FetchDescriptor<Plant>())) ?? []
+        guard existing.isEmpty else {
+            repairSeededFields(existing, context: context)
+            return
+        }
 
         var categoriesByName: [String: Category] = [:]
         for seedCategory in categories {
@@ -145,5 +148,35 @@ enum PlantSeedData {
         }
 
         try? context.save()
+    }
+
+    /// Names and categories come from the seed list and are not user-editable, so any
+    /// stored value that drifted from the seed (for example a name cleared by accident
+    /// in an earlier version of the editor) is restored on launch.
+    private static func repairSeededFields(_ existing: [Plant], context: ModelContext) {
+        let seedByIndex = Dictionary(uniqueKeysWithValues: plants.map { ($0.index, $0) })
+        let storedCategories = (try? context.fetch(FetchDescriptor<Category>())) ?? []
+        let categoriesByName = Dictionary(storedCategories.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+
+        var didChange = false
+        for plant in existing {
+            guard let seed = seedByIndex[plant.index] else { continue }
+            if plant.latinName != seed.latinName {
+                plant.latinName = seed.latinName
+                didChange = true
+            }
+            if plant.dutchName != seed.dutchName {
+                plant.dutchName = seed.dutchName
+                didChange = true
+            }
+            if plant.category == nil, let category = categoriesByName[seed.categoryName] {
+                plant.category = category
+                didChange = true
+            }
+        }
+
+        if didChange {
+            try? context.save()
+        }
     }
 }
