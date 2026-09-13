@@ -33,7 +33,11 @@ struct PracticeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AppHeaderBar(title: title)
+                AppHeaderBar(
+                    title: title,
+                    backTitle: "Practice",
+                    onBack: hasStarted ? { hasStarted = false } : nil
+                )
 
                 ScrollView {
                     switch stage {
