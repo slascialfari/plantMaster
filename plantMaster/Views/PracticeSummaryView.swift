@@ -14,11 +14,18 @@ struct PracticeSummaryView: View {
                 .foregroundStyle(.green)
 
             if session.missed.isEmpty {
-                Text("Everything correct. Well done!")
+                Text("Everything correct first time. Well done!")
                     .font(.headline)
             } else {
+                Text(session.retriesTaken == 1
+                     ? "You got the missed one right on the retry."
+                     : "All missed plants answered correctly after \(session.retriesTaken) retries.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Review these:")
+                    Text("Missed on the first try:")
                         .font(.headline)
                     ForEach(session.missed) { miss in
                         VStack(alignment: .leading, spacing: 2) {

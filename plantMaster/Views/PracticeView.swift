@@ -5,6 +5,7 @@ struct PracticeView: View {
     @Query private var allPlants: [Plant]
     @State private var session = PracticeSession()
     @State private var hasStarted = false
+    @State private var flashcardPlants: [Plant]? = nil
 
     private var activatedPlants: [Plant] {
         allPlants.filter { $0.isActivated }
@@ -18,10 +19,13 @@ struct PracticeView: View {
         case landing
         case question(PracticeQuestion)
         case summary
+        case flashcards([Plant])
     }
 
     private var stage: Stage {
-        if hasStarted, let question = session.currentQuestion {
+        if let flashcardPlants {
+            return .flashcards(flashcardPlants)
+        } else if hasStarted, let question = session.currentQuestion {
             return .question(question)
         } else if hasStarted, session.isFinished {
             return .summary
@@ -36,22 +40,28 @@ struct PracticeView: View {
                 AppHeaderBar(
                     title: title,
                     backTitle: "Practice",
-                    onBack: hasStarted ? { hasStarted = false } : nil
+                    onBack: showsBackButton ? { returnToLanding() } : nil
                 )
 
-                ScrollView {
-                    switch stage {
-                    case .landing:
-                        landing
-                    case .question(let question):
-                        sessionContent(question: question)
-                    case .summary:
-                        PracticeSummaryView(session: session)
+                if case .flashcards(let plants) = stage {
+                    FlashcardsView(plants: plants)
+                } else {
+                    ScrollView {
+                        switch stage {
+                        case .landing:
+                            landing
+                        case .question(let question):
+                            sessionContent(question: question)
+                        case .summary:
+                            PracticeSummaryView(session: session)
+                        case .flashcards:
+                            EmptyView()
+                        }
                     }
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .safeAreaInset(edge: .bottom) {
-                    footer
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        footer
+                    }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -63,10 +73,25 @@ struct PracticeView: View {
         case .landing:
             return "Practice"
         case .question:
+            if session.isInRetryPhase {
+                return session.retryQueue.count == 1 ? "Retry · last one" : "Retry · \(session.retryQueue.count) left"
+            }
             return "Question \(session.currentIndex + 1) of \(session.questions.count)"
         case .summary:
             return "Results"
+        case .flashcards:
+            return "Flashcards"
         }
+    }
+
+    private var showsBackButton: Bool {
+        if case .landing = stage { return false }
+        return true
+    }
+
+    private func returnToLanding() {
+        hasStarted = false
+        flashcardPlants = nil
     }
 
     // MARK: - Landing
@@ -97,7 +122,7 @@ struct PracticeView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Image(systemName: mode.systemImage)
-                        .font(.system(size: 30, weight: .semibold))
+                        .font(.system(size: 26, weight: .semibold))
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.headline)
@@ -114,7 +139,7 @@ struct PracticeView: View {
             }
             .foregroundStyle(.white)
             .padding(20)
-            .frame(maxWidth: .infinity, minHeight: 170, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
             .background(canPractice ? AppTheme.brandGreen : Color(.systemGray3), in: RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
@@ -137,7 +162,7 @@ struct PracticeView: View {
     @ViewBuilder
     private var footer: some View {
         switch stage {
-        case .landing:
+        case .landing, .flashcards:
             EmptyView()
         case .question:
             if session.hasAnswered {
@@ -177,6 +202,10 @@ struct PracticeView: View {
     }
 
     private func startSession(mode: PracticeMode) {
+        guard mode.isQuiz else {
+            flashcardPlants = activatedPlants.shuffled()
+            return
+        }
         session.start(mode: mode, with: activatedPlants)
         hasStarted = true
     }

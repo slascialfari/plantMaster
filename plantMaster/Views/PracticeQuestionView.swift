@@ -16,6 +16,13 @@ struct PracticeQuestionView: View {
 
     var body: some View {
         VStack(spacing: 20) {
+            if question.isRetry {
+                Label("You missed this one earlier. Try again.", systemImage: "arrow.counterclockwise")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             photos
 
             if question.mode.showsDutchName {
