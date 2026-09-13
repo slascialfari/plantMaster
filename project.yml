@@ -26,6 +26,7 @@ targets:
       path: plantMaster/Info.plist
       properties:
         UILaunchScreen: {}
+        NSCameraUsageDescription: "plantMaster uses the camera to take reference photos of plants you're studying."
   plantMasterTests:
     type: bundle.unit-test
     platform: iOS

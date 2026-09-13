@@ -18,6 +18,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>plantMaster uses the camera to take reference photos of plants you're studying.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>
