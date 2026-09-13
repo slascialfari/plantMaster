@@ -42,6 +42,7 @@ struct RootTabView: View {
             }
         }
         .ignoresSafeArea(.keyboard)
+        .task { MapImageLoader.shared.loadIfNeeded() }
     }
 
     private var footerBar: some View {

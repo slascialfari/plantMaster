@@ -55,7 +55,7 @@ struct TypedAnswerQuestionView: View {
         case .photoToLatinTyped:
             Group {
                 if let photo = question.target.sortedPhotos.first,
-                   let image = PhotoStore.load(filename: photo.filename) {
+                   let image = PhotoStore.display(filename: photo.filename) {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()

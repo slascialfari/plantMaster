@@ -6,7 +6,7 @@ struct PlantRow: View {
 
     private var thumbnail: UIImage? {
         guard let first = plant.sortedPhotos.first else { return nil }
-        return PhotoStore.load(filename: first.filename)
+        return PhotoStore.thumbnail(filename: first.filename)
     }
 
     var body: some View {

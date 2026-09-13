@@ -33,12 +33,7 @@ struct PlantDetailView: View {
                     Text("Notes")
                         .font(.headline)
                     if isEditing {
-                        TextEditor(text: $plant.notes)
-                            .frame(minHeight: 120)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3))
-                            )
+                        PlantNotesEditor(plant: plant)
                     } else if plant.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text("No notes yet. Tap Edit to add some.")
                             .font(.subheadline)
@@ -151,7 +146,7 @@ struct PlantDetailView: View {
             } else {
                 TabView {
                     ForEach(photos) { photo in
-                        if let image = PhotoStore.load(filename: photo.filename) {
+                        if let image = PhotoStore.display(filename: photo.filename) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
@@ -181,7 +176,7 @@ struct PlantDetailView: View {
             List {
                 ForEach(photos) { photo in
                     HStack(spacing: 12) {
-                        if let image = PhotoStore.load(filename: photo.filename) {
+                        if let image = PhotoStore.thumbnail(filename: photo.filename) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
