@@ -1,0 +1,47 @@
+name: plantMaster
+options:
+  bundleIdPrefix: com.stefanolascialfari
+  deploymentTarget:
+    iOS: "17.0"
+configs:
+  Debug: debug
+  Release: release
+targets:
+  plantMaster:
+    type: application
+    platform: iOS
+    sources:
+      - path: plantMaster
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.stefanolascialfari.plantMaster
+        SWIFT_VERSION: 5.0
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+    info:
+      path: plantMaster/Info.plist
+      properties:
+        UILaunchScreen: {}
+  plantMasterTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: plantMasterTests
+    dependencies:
+      - target: plantMaster
+schemes:
+  plantMaster:
+    build:
+      targets:
+        plantMaster: all
+    test:
+      targets:
+        - plantMasterTests
+    run:
+      config: Debug
+    archive:
+      config: Release
