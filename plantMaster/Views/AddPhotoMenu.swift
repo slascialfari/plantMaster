@@ -5,6 +5,7 @@ struct AddPhotoMenu: View {
     var onImagePicked: (UIImage) -> Void
 
     @State private var showCamera = false
+    @State private var showLibraryPicker = false
     @State private var photosPickerItems: [PhotosPickerItem] = []
 
     var body: some View {
@@ -16,7 +17,9 @@ struct AddPhotoMenu: View {
             }
             .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
 
-            PhotosPicker(selection: $photosPickerItems, matching: .images) {
+            Button {
+                showLibraryPicker = true
+            } label: {
                 Label("Choose from Library", systemImage: "photo.on.rectangle")
             }
         } label: {
@@ -28,6 +31,7 @@ struct AddPhotoMenu: View {
             }
             .ignoresSafeArea()
         }
+        .photosPicker(isPresented: $showLibraryPicker, selection: $photosPickerItems, matching: .images)
         .onChange(of: photosPickerItems) { _, newItems in
             guard !newItems.isEmpty else { return }
             Task {
