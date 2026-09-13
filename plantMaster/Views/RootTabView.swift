@@ -27,7 +27,7 @@ struct RootTabView: View {
     private var footerBar: some View {
         HStack(spacing: 0) {
             tabButton(.list, icon: "list.bullet", label: "List")
-            tabButton(.practice, icon: "gamecontroller.fill", label: "Practice")
+            tabButton(.practice, icon: "brain.head.profile", label: "Practice")
         }
         .padding(.top, 10)
         .padding(.bottom, 8)

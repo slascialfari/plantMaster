@@ -112,7 +112,7 @@ struct PracticeView: View {
 
     private var landing: some View {
         VStack(spacing: 20) {
-            Image(systemName: "gamecontroller.fill")
+            Image(systemName: "brain.head.profile")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
 
