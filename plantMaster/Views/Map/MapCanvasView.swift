@@ -31,6 +31,7 @@ struct MapCanvasView: View {
     @State private var offset: CGSize = .zero
 
     @State private var pinchStart: (scale: CGFloat, offset: CGSize)? = nil
+    private let mapLoader = MapImageLoader.shared
     @State private var dragStartOffset: CGSize? = nil
 
     private var totalScale: CGFloat { committedScale * liveFactor }
@@ -65,6 +66,7 @@ struct MapCanvasView: View {
             }
             .gesture(isInteractive ? magnifyGesture(container: container, fitted: fitted) : nil)
             .simultaneousGesture(isInteractive ? dragGesture(container: container, fitted: fitted) : nil)
+            .onAppear { mapLoader.loadIfNeeded() }
             .onChange(of: container) { _, newValue in
                 let newFitted = MapAsset.fittedSize(in: newValue)
                 offset = clampedOffset(offset, scale: totalScale, container: newValue, fitted: newFitted)
@@ -76,10 +78,16 @@ struct MapCanvasView: View {
 
     private func content(laidOut: CGSize) -> some View {
         ZStack {
-            if MapAsset.isAvailable {
-                Image(MapAsset.imageName)
+            if let bitmap = mapLoader.image {
+                Image(uiImage: bitmap)
                     .resizable()
                     .interpolation(.high)
+            } else if MapAsset.isAvailable {
+                ZStack {
+                    Color.white
+                    ProgressView("Loading map…")
+                        .scaleEffect(1 / liveFactor)
+                }
             } else {
                 missingMapPlaceholder
             }

@@ -5,7 +5,6 @@ import UIKit
 struct PlantDetailView: View {
     @Bindable var plant: Plant
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Category.sortOrder) private var categories: [Category]
 
     @State private var isEditing = false
     @State private var isShowingMap = false
@@ -15,37 +14,38 @@ struct PlantDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 photoSection
 
-                if isEditing {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TextField("Latin name", text: $plant.latinName)
-                            .font(.title3.weight(.semibold))
-                            .textFieldStyle(.roundedBorder)
-                        TextField("Dutch name", text: $plant.dutchName)
-                            .textFieldStyle(.roundedBorder)
-                        categoryPicker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(plant.index). \(plant.latinName)")
+                        .font(.title2.weight(.semibold))
+                        .italic()
+                    Text(plant.dutchName)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    if let category = plant.category {
+                        Text(category.name)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color(hex: category.colorHex))
                     }
-                    .padding(.horizontal)
-                } else {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(plant.index). \(plant.latinName)")
-                            .font(.title2.weight(.semibold))
-                            .italic()
-                        Text(plant.dutchName)
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal)
                 }
+                .padding(.horizontal)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Notes")
                         .font(.headline)
-                    TextEditor(text: $plant.notes)
-                        .frame(minHeight: 120)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3))
-                        )
+                    if isEditing {
+                        PlantNotesEditor(plant: plant)
+                    } else if plant.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("No notes yet. Tap Edit to add some.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(plant.notes)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineSpacing(3)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 .padding(.horizontal)
 
@@ -148,7 +148,7 @@ struct PlantDetailView: View {
             } else {
                 TabView {
                     ForEach(photos) { photo in
-                        if let image = PhotoStore.load(filename: photo.filename) {
+                        if let image = PhotoStore.display(filename: photo.filename) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
@@ -178,7 +178,7 @@ struct PlantDetailView: View {
             List {
                 ForEach(photos) { photo in
                     HStack(spacing: 12) {
-                        if let image = PhotoStore.load(filename: photo.filename) {
+                        if let image = PhotoStore.thumbnail(filename: photo.filename) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
@@ -207,19 +207,6 @@ struct PlantDetailView: View {
             }
             .padding(.horizontal)
         }
-    }
-
-    private var categoryPicker: some View {
-        Picker("Category", selection: Binding(
-            get: { plant.category },
-            set: { plant.category = $0 }
-        )) {
-            Text("None").tag(Category?.none)
-            ForEach(categories) { category in
-                Text(category.name).tag(Category?.some(category))
-            }
-        }
-        .pickerStyle(.menu)
     }
 
     private func addPhoto(_ image: UIImage) {

@@ -5,19 +5,27 @@ struct PracticeView: View {
     @Query private var allPlants: [Plant]
     @State private var session = PracticeSession()
     @State private var hasStarted = false
+    @State private var flashcardPlants: [Plant]? = nil
 
     private var activatedPlants: [Plant] {
         allPlants.filter { $0.isActivated }
+    }
+
+    private var canPractice: Bool {
+        activatedPlants.count >= PracticeSession.minimumActivatedPlants
     }
 
     private enum Stage {
         case landing
         case question(PracticeQuestion)
         case summary
+        case flashcards([Plant])
     }
 
     private var stage: Stage {
-        if hasStarted, let question = session.currentQuestion {
+        if let flashcardPlants {
+            return .flashcards(flashcardPlants)
+        } else if hasStarted, let question = session.currentQuestion {
             return .question(question)
         } else if hasStarted, session.isFinished {
             return .summary
@@ -29,20 +37,31 @@ struct PracticeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AppHeaderBar(title: title)
+                AppHeaderBar(
+                    title: title,
+                    backTitle: "Practice",
+                    onBack: showsBackButton ? { returnToLanding() } : nil
+                )
 
-                ScrollView {
-                    switch stage {
-                    case .landing:
-                        landing
-                    case .question(let question):
-                        sessionContent(question: question)
-                    case .summary:
-                        PracticeSummaryView(session: session)
+                if case .flashcards(let plants) = stage {
+                    FlashcardsView(plants: plants)
+                } else {
+                    ScrollView {
+                        switch stage {
+                        case .landing:
+                            landing
+                        case .question(let question):
+                            sessionContent(question: question)
+                        case .summary:
+                            PracticeSummaryView(session: session)
+                        case .flashcards:
+                            EmptyView()
+                        }
                     }
-                }
-                .safeAreaInset(edge: .bottom) {
-                    footer
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        footer
+                    }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -54,29 +73,101 @@ struct PracticeView: View {
         case .landing:
             return "Practice"
         case .question:
+            if session.isInRetryPhase {
+                return session.retryQueue.count == 1 ? "Retry · last one" : "Retry · \(session.retryQueue.count) left"
+            }
             return "Question \(session.currentIndex + 1) of \(session.questions.count)"
         case .summary:
             return "Results"
+        case .flashcards:
+            return "Flashcards"
         }
+    }
+
+    private var showsBackButton: Bool {
+        if case .landing = stage { return false }
+        return true
+    }
+
+    private func returnToLanding() {
+        hasStarted = false
+        flashcardPlants = nil
+    }
+
+    // MARK: - Landing
+
+    private var landing: some View {
+        VStack(spacing: 16) {
+            Text(canPractice
+                 ? "\(activatedPlants.count) plants activated"
+                 : "Add a photo to at least one plant before you can practice.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 8)
+
+            ForEach(PracticeMode.allCases) { mode in
+                modeButton(mode)
+            }
+        }
+        .padding()
+    }
+
+    private func modeButton(_ mode: PracticeMode) -> some View {
+        Button {
+            guard canPractice else { return }
+            startSession(mode: mode)
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Image(systemName: mode.systemImage)
+                        .font(.system(size: 26, weight: .semibold))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.headline)
+                        .opacity(0.7)
+                }
+                Spacer(minLength: 0)
+                Text(mode.title)
+                    .font(.title2.weight(.bold))
+                Text(mode.subtitle)
+                    .font(.subheadline)
+                    .opacity(0.9)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(.white)
+            .padding(20)
+            .frame(maxWidth: .infinity, minHeight: 140, alignment: .leading)
+            .background(canPractice ? AppTheme.brandGreen : Color(.systemGray3), in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(canPractice ? "" : "Add a photo to a plant first")
+    }
+
+    // MARK: - Session
+
+    @ViewBuilder
+    private func sessionContent(question: PracticeQuestion) -> some View {
+        VStack(spacing: 16) {
+            ProgressView(value: session.progress)
+                .padding(.horizontal)
+
+            PracticeQuestionView(question: question, session: session)
+        }
+        .padding(.top)
     }
 
     @ViewBuilder
     private var footer: some View {
         switch stage {
-        case .landing:
-            if activatedPlants.count >= PracticeSession.minimumActivatedPlants {
-                footerBar {
-                    Button("Start Practice") {
-                        startSession()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .frame(maxWidth: .infinity)
-                }
-            }
+        case .landing, .flashcards:
+            EmptyView()
         case .question:
             if session.hasAnswered {
                 footerBar {
-                    Button(session.currentIndex + 1 == session.questions.count ? "Finish" : "Next") {
+                    Button(session.isLastQuestion ? "Finish" : "Next") {
                         session.advance()
                     }
                     .buttonStyle(.borderedProminent)
@@ -87,7 +178,7 @@ struct PracticeView: View {
             footerBar {
                 VStack(spacing: 12) {
                     Button("Practice Again") {
-                        startSession()
+                        startSession(mode: session.mode)
                     }
                     .buttonStyle(.borderedProminent)
                     .frame(maxWidth: .infinity)
@@ -110,51 +201,12 @@ struct PracticeView: View {
         .background(Color(.systemBackground))
     }
 
-    private var landing: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "brain.head.profile")
-                .font(.system(size: 48))
-                .foregroundStyle(.green)
-
-            Text("\(activatedPlants.count) plants activated")
-                .font(.headline)
-
-            if activatedPlants.count < PracticeSession.minimumActivatedPlants {
-                Text("Activate at least \(PracticeSession.minimumActivatedPlants) plants (add a photo to each) before you can practice.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            } else {
-                Text("A quick \(PracticeSession.questionCount)-question round mixing photos, names, and typing.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
+    private func startSession(mode: PracticeMode) {
+        guard mode.isQuiz else {
+            flashcardPlants = activatedPlants.shuffled()
+            return
         }
-        .padding(.top, 40)
-        .padding(.horizontal)
-        .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    private func sessionContent(question: PracticeQuestion) -> some View {
-        VStack(spacing: 16) {
-            ProgressView(value: session.progress)
-                .padding(.horizontal)
-
-            if question.kind.isMultipleChoice {
-                MultipleChoiceQuestionView(question: question, session: session)
-            } else {
-                TypedAnswerQuestionView(question: question, session: session)
-            }
-        }
-        .padding(.top)
-    }
-
-    private func startSession() {
-        session.start(with: activatedPlants)
+        session.start(mode: mode, with: activatedPlants)
         hasStarted = true
     }
 }

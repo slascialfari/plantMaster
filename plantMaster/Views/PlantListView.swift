@@ -16,7 +16,7 @@ struct PlantListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AppHeaderBar(title: "Planten Lijst")
+                AppHeaderBar(title: "My Plants")
 
                 List {
                     ForEach(groupedByCategory, id: \.category?.persistentModelID) { group in

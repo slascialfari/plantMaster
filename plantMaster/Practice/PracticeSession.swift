@@ -4,113 +4,144 @@ import SwiftData
 
 @Observable
 final class PracticeSession {
+    static let examQuestionCount = 10
+    static let minimumActivatedPlants = 1
+
+    private(set) var mode: PracticeMode = .dutchToLatin
+    /// The main round: every selected plant once.
     private(set) var questions: [PracticeQuestion] = []
     private(set) var currentIndex = 0
+    /// Plants answered wrongly, asked again after the main round until they are right.
+    private(set) var retryQueue: [PracticeQuestion] = []
+    /// Number of retry questions answered so far, right or wrong.
+    private(set) var retriesTaken = 0
     private(set) var score = 0
-    private(set) var missed: [Plant] = []
+    private(set) var missed: [PracticeMiss] = []
 
-    var selectedChoice: Plant?
-    var typedAnswer: String = ""
-    var hasAnswered = false
-    var lastAnswerWasCorrect = false
+    var typedLatin: String = ""
+    var typedDutch: String = ""
+    private(set) var hasAnswered = false
+    private(set) var latinCorrect = false
+    private(set) var dutchCorrect = false
 
-    static let questionCount = 12
-    static let minimumActivatedPlants = 4
+    var isInRetryPhase: Bool {
+        currentIndex >= questions.count
+    }
 
     var currentQuestion: PracticeQuestion? {
-        questions.indices.contains(currentIndex) ? questions[currentIndex] : nil
+        if questions.indices.contains(currentIndex) {
+            return questions[currentIndex]
+        }
+        return retryQueue.first
     }
 
     var isFinished: Bool {
-        !questions.isEmpty && currentIndex >= questions.count
+        !questions.isEmpty && isInRetryPhase && retryQueue.isEmpty
+    }
+
+    /// True when advancing past the current question ends the session. During the main
+    /// round that also requires nothing to be waiting in the retry queue.
+    var isLastQuestion: Bool {
+        if isInRetryPhase {
+            return retryQueue.count == 1
+        }
+        return currentIndex + 1 == questions.count && retryQueue.isEmpty
     }
 
     var progress: Double {
-        guard !questions.isEmpty else { return 0 }
-        return Double(currentIndex) / Double(questions.count)
+        let total = questions.count + retriesTaken + retryQueue.count
+        guard total > 0 else { return 0 }
+        let answered = min(currentIndex, questions.count) + retriesTaken
+        return Double(answered) / Double(total)
     }
 
-    func start(with activatedPlants: [Plant]) {
-        questions = Self.buildQuestions(from: activatedPlants)
+    var lastAnswerWasCorrect: Bool {
+        latinCorrect && (!mode.asksDutchName || dutchCorrect)
+    }
+
+    /// Whether the current answer can be submitted: every asked field has something in it.
+    var canSubmit: Bool {
+        let latinFilled = !typedLatin.trimmingCharacters(in: .whitespaces).isEmpty
+        let dutchFilled = !typedDutch.trimmingCharacters(in: .whitespaces).isEmpty
+        return latinFilled && (!mode.asksDutchName || dutchFilled)
+    }
+
+    func start(mode: PracticeMode, with activatedPlants: [Plant]) {
+        self.mode = mode
+        questions = Self.buildQuestions(mode: mode, from: activatedPlants)
         currentIndex = 0
+        retryQueue = []
+        retriesTaken = 0
         score = 0
         missed = []
-        selectedChoice = nil
-        typedAnswer = ""
-        hasAnswered = false
+        resetAnswerState()
     }
 
-    func submitChoice(_ plant: Plant) {
+    func submit() {
         guard let question = currentQuestion, !hasAnswered else { return }
-        selectedChoice = plant
-        lastAnswerWasCorrect = plant.persistentModelID == question.target.persistentModelID
-        recordAnswer(correct: lastAnswerWasCorrect, target: question.target)
-    }
+        let target = question.target
 
-    func submitTypedAnswer() {
-        guard let question = currentQuestion, !hasAnswered else { return }
-        lastAnswerWasCorrect = StringNormalization.matches(typedAnswer, question.target.latinName)
-        recordAnswer(correct: lastAnswerWasCorrect, target: question.target)
-    }
-
-    private func recordAnswer(correct: Bool, target: Plant) {
+        latinCorrect = StringNormalization.matchesAny(typedLatin, target.latinName)
+        dutchCorrect = mode.asksDutchName ? StringNormalization.matchesAny(typedDutch, target.dutchName) : true
         hasAnswered = true
-        if correct {
+
+        if question.isRetry {
+            // Retries never change the score; a wrong retry simply comes back once more.
+            if !lastAnswerWasCorrect {
+                retryQueue.append(PracticeQuestion(mode: mode, target: target, isRetry: true))
+            }
+        } else if lastAnswerWasCorrect {
             score += 1
         } else {
-            missed.append(target)
+            missed.append(PracticeMiss(
+                plant: target,
+                latinCorrect: latinCorrect,
+                dutchCorrect: dutchCorrect,
+                typedLatin: typedLatin,
+                typedDutch: typedDutch
+            ))
+            retryQueue.append(PracticeQuestion(mode: mode, target: target, isRetry: true))
         }
     }
 
     func advance() {
-        currentIndex += 1
-        selectedChoice = nil
-        typedAnswer = ""
-        hasAnswered = false
+        if isInRetryPhase {
+            if !retryQueue.isEmpty {
+                retryQueue.removeFirst()
+                retriesTaken += 1
+            }
+        } else {
+            currentIndex += 1
+            if isInRetryPhase {
+                retryQueue.shuffle()
+            }
+        }
+        resetAnswerState()
     }
 
-    private static func buildQuestions(from activatedPlants: [Plant]) -> [PracticeQuestion] {
+    private func resetAnswerState() {
+        typedLatin = ""
+        typedDutch = ""
+        hasAnswered = false
+        latinCorrect = false
+        dutchCorrect = false
+    }
+
+    private static func buildQuestions(mode: PracticeMode, from activatedPlants: [Plant]) -> [PracticeQuestion] {
         guard activatedPlants.count >= minimumActivatedPlants else { return [] }
 
-        var questions: [PracticeQuestion] = []
-        var previousPlantID: PersistentIdentifier?
-
-        for _ in 0..<questionCount {
-            var candidates = activatedPlants
-            if let previousPlantID, activatedPlants.count > 1 {
-                candidates = activatedPlants.filter { $0.persistentModelID != previousPlantID }
-            }
-            guard let target = candidates.randomElement() else { break }
-            previousPlantID = target.persistentModelID
-
-            let kind = PracticeExerciseKind.allCases.randomElement()!
-            let choices: [Plant]
-            if kind.isMultipleChoice {
-                choices = buildChoices(target: target, pool: activatedPlants)
-            } else {
-                choices = []
-            }
-
-            questions.append(PracticeQuestion(kind: kind, target: target, choices: choices))
+        let shuffled = activatedPlants.shuffled()
+        let selected: [Plant]
+        switch mode {
+        case .dutchToLatin:
+            selected = shuffled
+        case .exam:
+            selected = Array(shuffled.prefix(examQuestionCount))
+        case .flashcards:
+            // Flashcards are browsed in FlashcardsView, never as a scored session.
+            return []
         }
 
-        return questions
-    }
-
-    private static func buildChoices(target: Plant, pool: [Plant]) -> [Plant] {
-        let others = pool.filter { $0.persistentModelID != target.persistentModelID }
-        let sameCategory = others.filter { $0.category?.persistentModelID == target.category?.persistentModelID }
-
-        var distractors = Array(sameCategory.shuffled().prefix(3))
-        if distractors.count < 3 {
-            let remaining = others.filter { plant in
-                !distractors.contains { $0.persistentModelID == plant.persistentModelID }
-            }
-            distractors.append(contentsOf: remaining.shuffled().prefix(3 - distractors.count))
-        }
-
-        var choices = distractors + [target]
-        choices.shuffle()
-        return choices
+        return selected.map { PracticeQuestion(mode: mode, target: $0) }
     }
 }
