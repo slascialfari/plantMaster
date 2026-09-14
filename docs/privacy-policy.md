@@ -1,25 +1,25 @@
-# PlantMaster Privacy Policy
+# Herbarius Privacy Policy
 
 _Last updated: 14 September 2026_
 
-PlantMaster is a study app for learning plant names. This page explains what the app does with your information.
+Herbarius is a study app for learning plant names. This page explains what the app does with your information.
 
 ## What the app stores
 
-Everything you add in PlantMaster stays on your device:
+Everything you add in Herbarius stays on your device:
 
 - Photos you take or choose for a plant
 - Notes you write
 - Pins you place on the garden map
 - Your practice results while a session is running
 
-This information is saved in the app's own storage on your iPhone or iPad. It is included in your device backups (iCloud or computer backups) in the same way as any other app's data.
+This information is saved in the app's own storage on your iPhone. It is included in your device backups (iCloud or computer backups) in the same way as any other app's data.
 
 ## What the app does not do
 
-- PlantMaster does not collect, transmit, or share any personal information.
-- PlantMaster has no user accounts, no analytics, no advertising, and no third-party services.
-- PlantMaster does not connect to the internet.
+- Herbarius does not collect, transmit, or share any personal information.
+- Herbarius has no user accounts, no analytics, no advertising, and no third-party services.
+- Herbarius does not connect to the internet.
 
 ## Camera and photo access
 

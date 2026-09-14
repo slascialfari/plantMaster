@@ -28,10 +28,10 @@ targets:
     info:
       path: plantMaster/Info.plist
       properties:
-        CFBundleDisplayName: PlantMaster
+        CFBundleDisplayName: Herbarius
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
-        NSCameraUsageDescription: "plantMaster uses the camera to take reference photos of plants you're studying."
+        NSCameraUsageDescription: "Herbarius uses the camera to take reference photos of plants you're studying."
   plantMasterTests:
     type: bundle.unit-test
     platform: iOS

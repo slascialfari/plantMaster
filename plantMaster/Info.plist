@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>PlantMaster</string>
+	<string>Herbarius</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,7 +23,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSCameraUsageDescription</key>
-	<string>plantMaster uses the camera to take reference photos of plants you're studying.</string>
+	<string>Herbarius uses the camera to take reference photos of plants you're studying.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>
