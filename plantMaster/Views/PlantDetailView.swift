@@ -40,7 +40,9 @@ struct PlantDetailView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         Text(plant.notes)
-                            .font(.body)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineSpacing(3)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

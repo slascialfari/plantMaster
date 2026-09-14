@@ -62,7 +62,7 @@ struct AppHeaderBar: View {
 
 #Preview("Plain") {
     VStack(spacing: 24) {
-        AppHeaderBar(title: "Planten Lijst")
+        AppHeaderBar(title: "My Plants")
         AppHeaderBar(title: "Question 3 of 12", backTitle: "Practice") {}
     }
 }

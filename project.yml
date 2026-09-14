@@ -25,6 +25,7 @@ targets:
     info:
       path: plantMaster/Info.plist
       properties:
+        CFBundleDisplayName: PlantMaster
         UILaunchScreen: {}
         NSCameraUsageDescription: "plantMaster uses the camera to take reference photos of plants you're studying."
   plantMasterTests:

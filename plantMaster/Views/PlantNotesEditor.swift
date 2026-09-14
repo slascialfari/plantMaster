@@ -13,6 +13,9 @@ struct PlantNotesEditor: View {
 
     var body: some View {
         TextEditor(text: $draft)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .lineSpacing(3)
             .frame(minHeight: 120)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
