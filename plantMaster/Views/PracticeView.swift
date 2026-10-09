@@ -6,7 +6,28 @@ struct PracticeView: View {
     @State private var session = PracticeSession()
     @State private var hasStarted = false
     @State private var flashcardPlants: [Plant]? = nil
-    @AppStorage("practiceIncludesKnown") private var includeKnown = false
+    @AppStorage("practiceFilter") private var filter: PracticeFilter = .learning
+    @State private var isChoosingHandpicked = false
+
+    /// Which plants the exercises draw from.
+    enum PracticeFilter: String, CaseIterable, Identifiable {
+        /// Photographed plants not marked as known.
+        case learning
+        /// Every photographed plant.
+        case all
+        /// Photographed plants chosen in the Handpicked sheet, known or not.
+        case handpicked
+
+        var id: Self { self }
+
+        var label: String {
+            switch self {
+            case .learning: return "Still learning"
+            case .all: return "All"
+            case .handpicked: return "Handpicked"
+            }
+        }
+    }
 
     private var activatedPlants: [Plant] {
         allPlants.filter { $0.isActivated }
@@ -16,10 +37,13 @@ struct PracticeView: View {
         activatedPlants.filter(\.isKnown).count
     }
 
-    /// The plants every exercise draws from: all photographed plants, minus the ones marked
-    /// as known unless the filter is set to All.
+    /// The plants every exercise draws from, according to the filter.
     private var practicePlants: [Plant] {
-        includeKnown ? activatedPlants : activatedPlants.filter { !$0.isKnown }
+        switch filter {
+        case .learning: return activatedPlants.filter { !$0.isKnown }
+        case .all: return activatedPlants
+        case .handpicked: return activatedPlants.filter(\.isHandpicked)
+        }
     }
 
     private var canPractice: Bool {
@@ -76,6 +100,9 @@ struct PracticeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $isChoosingHandpicked) {
+                HandpickedSelectionView()
+            }
         }
     }
 
@@ -110,11 +137,25 @@ struct PracticeView: View {
     private var landing: some View {
         VStack(spacing: 16) {
             if !activatedPlants.isEmpty {
-                Picker("Plants to practise", selection: $includeKnown) {
-                    Text("Still learning (\(activatedPlants.count - knownCount))").tag(false)
-                    Text("All (\(activatedPlants.count))").tag(true)
+                Picker("Plants to practise", selection: $filter) {
+                    ForEach(PracticeFilter.allCases) { option in
+                        Text(option.label).tag(option)
+                    }
                 }
                 .pickerStyle(.segmented)
+
+                if filter == .handpicked {
+                    Button {
+                        isChoosingHandpicked = true
+                    } label: {
+                        Label(practicePlants.isEmpty ? "Choose plants" : "Change selection",
+                              systemImage: "checklist")
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(AppTheme.brandGreen)
+                }
             }
 
             Text(landingMessage)
@@ -136,10 +177,17 @@ struct PracticeView: View {
             return "Add a photo to at least one plant before you can practice."
         }
         if practicePlants.isEmpty {
-            return "All your plants are marked as known. Switch to All to practise them."
+            switch filter {
+            case .handpicked:
+                return "No plants picked yet. Choose the categories or plants you want to practise."
+            case .learning:
+                return "All your plants are marked as known. Switch to All to practise them."
+            case .all:
+                return ""
+            }
         }
         let plantsText = practicePlants.count == 1 ? "1 plant" : "\(practicePlants.count) plants"
-        if !includeKnown && knownCount > 0 {
+        if filter == .learning && knownCount > 0 {
             let knownText = knownCount == 1 ? "1 known plant" : "\(knownCount) known plants"
             return "\(plantsText) to practise. \(knownText) hidden."
         }

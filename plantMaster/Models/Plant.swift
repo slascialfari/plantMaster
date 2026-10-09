@@ -11,6 +11,8 @@ final class Plant {
     /// Marked by the student as already learned. Known plants are left out of practice
     /// unless the Practice filter is set to All.
     var isKnown: Bool = false
+    /// Chosen for the Handpicked practice set. Independent of `isKnown`.
+    var isHandpicked: Bool = false
 
     @Relationship(deleteRule: .cascade)
     var photos: [PlantPhoto] = []
