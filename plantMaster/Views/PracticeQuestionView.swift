@@ -101,12 +101,11 @@ struct PracticeQuestionView: View {
 
     // MARK: - Photos
 
-    /// The rotated photo alone, or for the exam all photos with the rotated one first.
+    /// The rotated photo alone, or for the exam all photos in the question's shuffled order.
     private var photosToShow: [PlantPhoto] {
         guard let lead = question.photo else { return [] }
         guard question.mode == .exam else { return [lead] }
-        let others = question.target.sortedPhotos.filter { $0.persistentModelID != lead.persistentModelID }
-        return [lead] + others
+        return question.examPhotos
     }
 
     @ViewBuilder

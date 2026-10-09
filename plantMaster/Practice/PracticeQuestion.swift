@@ -59,12 +59,21 @@ struct PracticeQuestion: Identifiable {
     var isRetry: Bool = false
     /// The photo to lead with, chosen by `PhotoRotation` so a plant's photos take turns.
     let photo: PlantPhoto?
+    /// All of the plant's photos for the exam pager: the rotated photo first, the rest in a
+    /// random order fixed for this question so they don't move while it's on screen.
+    let examPhotos: [PlantPhoto]
 
     init(mode: PracticeMode, target: Plant, isRetry: Bool = false) {
         self.mode = mode
         self.target = target
         self.isRetry = isRetry
-        self.photo = PhotoRotation.pick(from: target.photos)
+        let lead = PhotoRotation.pick(from: target.photos)
+        self.photo = lead
+        if let lead {
+            self.examPhotos = [lead] + target.photos.filter { $0 !== lead }.shuffled()
+        } else {
+            self.examPhotos = []
+        }
     }
 }
 
