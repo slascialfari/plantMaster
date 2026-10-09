@@ -3,7 +3,6 @@ import SwiftUI
 struct RootTabView: View {
     private enum Tab {
         case list
-        case map
         case practice
     }
 
@@ -22,10 +21,6 @@ struct RootTabView: View {
                     PlantListView()
                         .opacity(selectedTab == .list ? 1 : 0)
                         .allowsHitTesting(selectedTab == .list)
-
-                    MapExploreView()
-                        .opacity(selectedTab == .map ? 1 : 0)
-                        .allowsHitTesting(selectedTab == .map)
 
                     PracticeView()
                         .opacity(selectedTab == .practice ? 1 : 0)
@@ -48,7 +43,6 @@ struct RootTabView: View {
     private var footerBar: some View {
         HStack(spacing: 0) {
             tabButton(.list, icon: "list.bullet", label: "List")
-            tabButton(.map, icon: "map", label: "Map")
             tabButton(.practice, icon: "brain.head.profile", label: "Practice")
         }
         .padding(.top, 10)

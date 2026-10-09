@@ -38,6 +38,10 @@ struct FlashcardsView: View {
             TabView(selection: $currentIndex) {
                 ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
                     FlashcardView(plant: card.plant, photo: card.photo)
+                        .overlay(alignment: .topTrailing) {
+                            KnownCornerButton(plant: card.plant)
+                                .padding(8)
+                        }
                         .padding(.horizontal)
                         .padding(.bottom, 24)
                         .tag(index)
@@ -47,11 +51,6 @@ struct FlashcardsView: View {
             .animation(.default, value: currentIndex)
             .onAppear { markCurrentShown() }
             .onChange(of: currentIndex) { _, _ in markCurrentShown() }
-
-            if cards.indices.contains(currentIndex) {
-                KnownToggleButton(plant: cards[currentIndex].plant)
-                    .padding(.horizontal)
-            }
 
             ProgressView(value: plants.isEmpty ? 0 : Double(currentIndex + 1), total: Double(max(plants.count, 1)))
                 .padding(.horizontal)
