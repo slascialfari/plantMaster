@@ -135,3 +135,19 @@ struct PhotoRotationTests {
         #expect(PhotoRotation.pick(from: []) == nil)
     }
 }
+
+struct StringNormalizationTests {
+    @Test func hybridSignMatchesPlainX() {
+        #expect(StringNormalization.matches("Magnolia x soulangeana", "Magnolia × soulangeana"))
+        #expect(StringNormalization.matches("magnolia x soulangeana", "Magnolia x soulangeana"))
+    }
+
+    @Test func cultivarQuotesAreOptional() {
+        #expect(StringNormalization.matches("Fagus sylvatica Atropunicea", "Fagus sylvatica 'Atropunicea'"))
+        #expect(StringNormalization.matches("fagus sylvatica 'atropunicea'", "Fagus sylvatica 'Atropunicea'"))
+    }
+
+    @Test func accentsAreOptional() {
+        #expect(StringNormalization.matches("Aster x frikartii Monch", "Aster x frikartii 'Mönch'"))
+    }
+}

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 /// One practice question: the plant's photo(s), an optional Dutch name prompt, and one or
@@ -13,6 +14,11 @@ struct PracticeQuestionView: View {
     }
 
     @FocusState private var focusedField: Field?
+    /// Photo currently showing in the question's pager, also opened in the full-screen viewer.
+    @State private var selectedPhotoID: PersistentIdentifier?
+    @State private var isShowingViewer = false
+    /// Field that had focus before opening the viewer, restored when it closes.
+    @State private var focusBeforeViewer: Field?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -81,6 +87,15 @@ struct PracticeQuestionView: View {
         .onChange(of: question.id) { _, _ in
             focusedField = question.mode.asksDutchName ? .dutch : .latin
             PhotoRotation.markShown(question.photo)
+            selectedPhotoID = question.photo?.persistentModelID
+        }
+        .onAppear {
+            selectedPhotoID = question.photo?.persistentModelID
+        }
+        .fullScreenCover(isPresented: $isShowingViewer, onDismiss: {
+            focusedField = focusBeforeViewer
+        }) {
+            PhotoViewer(photos: photosToShow, selection: $selectedPhotoID)
         }
     }
 
@@ -111,14 +126,14 @@ struct PracticeQuestionView: View {
                     .scaledToFill()
                     .pinchToZoom()
             } else {
-                TabView {
+                TabView(selection: $selectedPhotoID) {
                     ForEach(shown) { photo in
                         if let image = PhotoStore.display(filename: photo.filename) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
                                 .pinchToZoom()
-                                .tag(photo.id)
+                                .tag(Optional(photo.persistentModelID))
                         }
                     }
                 }
@@ -129,6 +144,35 @@ struct PracticeQuestionView: View {
         .frame(maxWidth: .infinity)
         .background(Color.gray.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .onTapGesture {
+            openViewer()
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if !shown.isEmpty {
+                Button {
+                    openViewer()
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(.black.opacity(0.4), in: Circle())
+                }
+                .padding(10)
+                .accessibilityLabel("Expand photo")
+            }
+        }
+    }
+
+    private func openViewer() {
+        guard !photosToShow.isEmpty else { return }
+        if selectedPhotoID == nil {
+            selectedPhotoID = photosToShow.first?.persistentModelID
+        }
+        focusBeforeViewer = focusedField
+        focusedField = nil
+        isShowingViewer = true
     }
 
     // MARK: - Fields

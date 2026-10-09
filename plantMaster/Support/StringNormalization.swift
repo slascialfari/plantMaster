@@ -2,7 +2,9 @@ import Foundation
 
 enum StringNormalization {
     static func normalize(_ input: String) -> String {
-        let folded = input.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        // Treat the botanical hybrid sign as a plain "x", so "Magnolia x soulangeana" matches.
+        let unified = input.replacingOccurrences(of: "×", with: "x")
+        let folded = unified.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
         let allowed = CharacterSet.letters.union(.whitespaces)
         let filtered = folded.unicodeScalars.filter { allowed.contains($0) }
         let cleaned = String(String.UnicodeScalarView(filtered))
