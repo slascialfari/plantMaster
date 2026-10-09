@@ -8,6 +8,9 @@ final class Plant {
     var dutchName: String
     var notes: String
     var category: Category?
+    /// Marked by the student as already learned. Known plants are left out of practice
+    /// unless the Practice filter is set to All.
+    var isKnown: Bool = false
 
     @Relationship(deleteRule: .cascade)
     var photos: [PlantPhoto] = []

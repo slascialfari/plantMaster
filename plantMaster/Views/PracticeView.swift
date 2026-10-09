@@ -6,13 +6,24 @@ struct PracticeView: View {
     @State private var session = PracticeSession()
     @State private var hasStarted = false
     @State private var flashcardPlants: [Plant]? = nil
+    @AppStorage("practiceIncludesKnown") private var includeKnown = false
 
     private var activatedPlants: [Plant] {
         allPlants.filter { $0.isActivated }
     }
 
+    private var knownCount: Int {
+        activatedPlants.filter(\.isKnown).count
+    }
+
+    /// The plants every exercise draws from: all photographed plants, minus the ones marked
+    /// as known unless the filter is set to All.
+    private var practicePlants: [Plant] {
+        includeKnown ? activatedPlants : activatedPlants.filter { !$0.isKnown }
+    }
+
     private var canPractice: Bool {
-        activatedPlants.count >= PracticeSession.minimumActivatedPlants
+        practicePlants.count >= PracticeSession.minimumActivatedPlants
     }
 
     private enum Stage {
@@ -98,9 +109,15 @@ struct PracticeView: View {
 
     private var landing: some View {
         VStack(spacing: 16) {
-            Text(canPractice
-                 ? "\(activatedPlants.count) plants activated"
-                 : "Add a photo to at least one plant before you can practice.")
+            if !activatedPlants.isEmpty {
+                Picker("Plants to practise", selection: $includeKnown) {
+                    Text("Still learning (\(activatedPlants.count - knownCount))").tag(false)
+                    Text("All (\(activatedPlants.count))").tag(true)
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Text(landingMessage)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -112,6 +129,21 @@ struct PracticeView: View {
             }
         }
         .padding()
+    }
+
+    private var landingMessage: String {
+        if activatedPlants.isEmpty {
+            return "Add a photo to at least one plant before you can practice."
+        }
+        if practicePlants.isEmpty {
+            return "All your plants are marked as known. Switch to All to practise them."
+        }
+        let plantsText = practicePlants.count == 1 ? "1 plant" : "\(practicePlants.count) plants"
+        if !includeKnown && knownCount > 0 {
+            let knownText = knownCount == 1 ? "1 known plant" : "\(knownCount) known plants"
+            return "\(plantsText) to practise. \(knownText) hidden."
+        }
+        return "\(plantsText) to practise."
     }
 
     private func modeButton(_ mode: PracticeMode) -> some View {
@@ -203,10 +235,10 @@ struct PracticeView: View {
 
     private func startSession(mode: PracticeMode) {
         guard mode.isQuiz else {
-            flashcardPlants = activatedPlants.shuffled()
+            flashcardPlants = practicePlants.shuffled()
             return
         }
-        session.start(mode: mode, with: activatedPlants)
+        session.start(mode: mode, with: practicePlants)
         hasStarted = true
     }
 }

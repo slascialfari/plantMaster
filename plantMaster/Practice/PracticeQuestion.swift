@@ -5,7 +5,7 @@ enum PracticeMode: CaseIterable, Identifiable {
     /// Every activated plant once, in random order. Shows the first photo and the Dutch
     /// name; the user types the Latin name.
     case dutchToLatin
-    /// Ten random activated plants. Shows all photos; the user types both names.
+    /// Every plant in the selection, in random order. Shows all photos; the user types both names.
     case exam
     /// Every activated plant once, in random order, as flip cards: photo, then the Dutch
     /// name, then the Latin name. Not scored.
@@ -28,9 +28,9 @@ enum PracticeMode: CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .dutchToLatin: return "All active plants. See the photo and Dutch name, type the Latin name."
-        case .exam: return "\(PracticeSession.examQuestionCount) random plants. See the photos, type both the Dutch and Latin name."
-        case .flashcards: return "All active plants in random order. Tap the card to reveal the names, swipe for the next plant."
+        case .dutchToLatin: return "Every plant in your selection. See the photo and Dutch name, type the Latin name."
+        case .exam: return "Every plant in your selection, in random order. See the photos, type both the Dutch and Latin name."
+        case .flashcards: return "Every plant in your selection, in random order. Tap the card to reveal the names, swipe for the next plant."
         }
     }
 

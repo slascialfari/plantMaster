@@ -49,6 +49,12 @@ struct PlantRow: View {
             }
 
             Spacer()
+
+            if plant.isKnown {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(AppTheme.brandGreen)
+                    .accessibilityLabel("Known")
+            }
         }
         .padding(.vertical, 4)
         .opacity(plant.isActivated ? 1.0 : 0.4)

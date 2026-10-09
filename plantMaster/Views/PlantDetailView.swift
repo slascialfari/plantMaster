@@ -29,6 +29,22 @@ struct PlantDetailView: View {
                 }
                 .padding(.horizontal)
 
+                Toggle(isOn: $plant.isKnown) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label("I know this one", systemImage: "checkmark.seal")
+                            .font(.subheadline.weight(.semibold))
+                        Text(plant.isKnown
+                             ? "Hidden from practice. Turn off to practise it again."
+                             : "Turn on to hide it from practice.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tint(AppTheme.brandGreen)
+                .padding(12)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal)
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Notes")
                         .font(.headline)

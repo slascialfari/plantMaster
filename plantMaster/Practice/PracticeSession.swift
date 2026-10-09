@@ -4,7 +4,6 @@ import SwiftData
 
 @Observable
 final class PracticeSession {
-    static let examQuestionCount = 10
     static let minimumActivatedPlants = 1
 
     private(set) var mode: PracticeMode = .dutchToLatin
@@ -130,13 +129,10 @@ final class PracticeSession {
     private static func buildQuestions(mode: PracticeMode, from activatedPlants: [Plant]) -> [PracticeQuestion] {
         guard activatedPlants.count >= minimumActivatedPlants else { return [] }
 
-        let shuffled = activatedPlants.shuffled()
         let selected: [Plant]
         switch mode {
-        case .dutchToLatin:
-            selected = shuffled
-        case .exam:
-            selected = Array(shuffled.prefix(examQuestionCount))
+        case .dutchToLatin, .exam:
+            selected = activatedPlants.shuffled()
         case .flashcards:
             // Flashcards are browsed in FlashcardsView, never as a scored session.
             return []

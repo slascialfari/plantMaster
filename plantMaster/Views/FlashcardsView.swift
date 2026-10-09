@@ -48,6 +48,11 @@ struct FlashcardsView: View {
             .onAppear { markCurrentShown() }
             .onChange(of: currentIndex) { _, _ in markCurrentShown() }
 
+            if cards.indices.contains(currentIndex) {
+                KnownToggleButton(plant: cards[currentIndex].plant)
+                    .padding(.horizontal)
+            }
+
             ProgressView(value: plants.isEmpty ? 0 : Double(currentIndex + 1), total: Double(max(plants.count, 1)))
                 .padding(.horizontal)
                 .padding(.bottom, 12)

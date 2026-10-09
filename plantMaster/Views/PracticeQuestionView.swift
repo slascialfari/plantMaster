@@ -63,6 +63,8 @@ struct PracticeQuestionView: View {
                 Text(session.lastAnswerWasCorrect ? "Correct!" : "Not quite")
                     .font(.headline)
                     .foregroundStyle(session.lastAnswerWasCorrect ? .green : .red)
+
+                KnownToggleButton(plant: question.target)
             } else {
                 Button("Check") {
                     session.submit()
