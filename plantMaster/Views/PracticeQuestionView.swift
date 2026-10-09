@@ -74,18 +74,27 @@ struct PracticeQuestionView: View {
         .padding()
         .onAppear {
             focusedField = question.mode.asksDutchName ? .dutch : .latin
+            PhotoRotation.markShown(question.photo)
         }
         .onChange(of: question.id) { _, _ in
             focusedField = question.mode.asksDutchName ? .dutch : .latin
+            PhotoRotation.markShown(question.photo)
         }
     }
 
     // MARK: - Photos
 
+    /// The rotated photo alone, or for the exam all photos with the rotated one first.
+    private var photosToShow: [PlantPhoto] {
+        guard let lead = question.photo else { return [] }
+        guard question.mode == .exam else { return [lead] }
+        let others = question.target.sortedPhotos.filter { $0.persistentModelID != lead.persistentModelID }
+        return [lead] + others
+    }
+
     @ViewBuilder
     private var photos: some View {
-        let plantPhotos = question.target.sortedPhotos
-        let shown = question.mode == .exam ? plantPhotos : Array(plantPhotos.prefix(1))
+        let shown = photosToShow
 
         Group {
             if shown.isEmpty {
@@ -98,6 +107,7 @@ struct PracticeQuestionView: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
+                    .pinchToZoom()
             } else {
                 TabView {
                     ForEach(shown) { photo in
@@ -105,6 +115,7 @@ struct PracticeQuestionView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
+                                .pinchToZoom()
                                 .tag(photo.id)
                         }
                     }

@@ -10,8 +10,9 @@ enum PhotoStore {
     /// Longest edge for list and strip thumbnails (points × 3 for Retina).
     static let thumbnailMaxPixel: CGFloat = 200
 
-    /// Longest edge for the large photo shown in the detail pager and practice questions.
-    static let displayMaxPixel: CGFloat = 1600
+    /// Longest edge for the large photos (detail pager, practice, flashcards). Matches the stored
+    /// size so pinch-to-zoom stays sharp.
+    static let displayMaxPixel: CGFloat = 2048
 
     private static let cache: NSCache<NSString, UIImage> = {
         let cache = NSCache<NSString, UIImage>()

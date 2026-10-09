@@ -1,12 +1,25 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 /// A swipeable deck of flip cards. Each card starts as a photo; tapping reveals the Dutch
 /// name, tapping again reveals the Latin name.
 struct FlashcardsView: View {
-    let plants: [Plant]
+    private struct Card: Identifiable {
+        let plant: Plant
+        let photo: PlantPhoto?
+        var id: PersistentIdentifier { plant.persistentModelID }
+    }
 
+    private var plants: [Plant] { cards.map(\.plant) }
+
+    /// One card per plant, each with its photo chosen once when the deck is dealt.
+    @State private var cards: [Card]
     @State private var currentIndex = 0
+
+    init(plants: [Plant]) {
+        _cards = State(initialValue: plants.map { Card(plant: $0, photo: PhotoRotation.pick(from: $0.photos)) })
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -23,8 +36,8 @@ struct FlashcardsView: View {
             .padding(.top, 4)
 
             TabView(selection: $currentIndex) {
-                ForEach(Array(plants.enumerated()), id: \.element.persistentModelID) { index, plant in
-                    FlashcardView(plant: plant)
+                ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                    FlashcardView(plant: card.plant, photo: card.photo)
                         .padding(.horizontal)
                         .padding(.bottom, 24)
                         .tag(index)
@@ -32,6 +45,8 @@ struct FlashcardsView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.default, value: currentIndex)
+            .onAppear { markCurrentShown() }
+            .onChange(of: currentIndex) { _, _ in markCurrentShown() }
 
             ProgressView(value: plants.isEmpty ? 0 : Double(currentIndex + 1), total: Double(max(plants.count, 1)))
                 .padding(.horizontal)
@@ -40,8 +55,16 @@ struct FlashcardsView: View {
     }
 }
 
+extension FlashcardsView {
+    fileprivate func markCurrentShown() {
+        guard cards.indices.contains(currentIndex) else { return }
+        PhotoRotation.markShown(cards[currentIndex].photo)
+    }
+}
+
 private struct FlashcardView: View {
     let plant: Plant
+    let photo: PlantPhoto?
 
     private enum Face: Int, CaseIterable {
         case photo
@@ -123,13 +146,14 @@ private struct FlashcardView: View {
 
     private var photoFace: some View {
         ZStack(alignment: .bottom) {
-            if let first = plant.sortedPhotos.first,
-               let image = PhotoStore.display(filename: first.filename) {
+            if let photo,
+               let image = PhotoStore.display(filename: photo.filename) {
                 Color.clear
                     .overlay(
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFill()
+                            .pinchToZoom()
                     )
             } else {
                 ZStack {

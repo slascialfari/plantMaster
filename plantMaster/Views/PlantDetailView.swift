@@ -152,6 +152,7 @@ struct PlantDetailView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
+                                .pinchToZoom()
                                 .tag(photo.id)
                         }
                     }

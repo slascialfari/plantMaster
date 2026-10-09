@@ -89,3 +89,49 @@ struct PracticeSessionTests {
         #expect(session.lastAnswerWasCorrect)
     }
 }
+
+@MainActor
+struct PhotoRotationTests {
+    private func photos(_ count: Int) -> [PlantPhoto] {
+        (0..<count).map { PlantPhoto(filename: "p\($0).jpg", sortOrder: $0) }
+    }
+
+    @Test func picksOnlyAmongLeastShown() {
+        let set = photos(3)
+        set[0].timesShown = 2
+        set[1].timesShown = 0
+        set[2].timesShown = 0
+        for _ in 0..<50 {
+            let picked = PhotoRotation.pick(from: set)!
+            #expect(picked.filename != "p0.jpg")
+        }
+    }
+
+    @Test func everyPhotoShownBeforeAnyRepeats() {
+        let set = photos(3)
+        for _ in 0..<5 {
+            var seen = Set<String>()
+            for _ in 0..<3 {
+                let picked = PhotoRotation.pick(from: set)!
+                seen.insert(picked.filename)
+                PhotoRotation.markShown(picked)
+            }
+            #expect(seen.count == 3)
+        }
+    }
+
+    @Test func twoPhotosAlternate() {
+        let set = photos(2)
+        var last: String?
+        for _ in 0..<10 {
+            let picked = PhotoRotation.pick(from: set)!
+            #expect(picked.filename != last)
+            last = picked.filename
+            PhotoRotation.markShown(picked)
+        }
+    }
+
+    @Test func noPhotosPicksNothing() {
+        #expect(PhotoRotation.pick(from: []) == nil)
+    }
+}

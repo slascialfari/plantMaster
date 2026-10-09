@@ -57,6 +57,15 @@ struct PracticeQuestion: Identifiable {
     let target: Plant
     /// True when this plant was answered wrongly earlier in the session and is being asked again.
     var isRetry: Bool = false
+    /// The photo to lead with, chosen by `PhotoRotation` so a plant's photos take turns.
+    let photo: PlantPhoto?
+
+    init(mode: PracticeMode, target: Plant, isRetry: Bool = false) {
+        self.mode = mode
+        self.target = target
+        self.isRetry = isRetry
+        self.photo = PhotoRotation.pick(from: target.photos)
+    }
 }
 
 /// A question the user got (partly) wrong, kept for the results screen.
