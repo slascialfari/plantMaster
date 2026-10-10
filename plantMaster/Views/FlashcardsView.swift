@@ -70,23 +70,37 @@ private struct FlashcardView: View {
     let plant: Plant
     let photo: PlantPhoto?
 
-    private enum Face: Int, CaseIterable {
+    private enum Face {
         case photo
         case dutch
         case latin
+        case notes
     }
 
     /// Number of taps so far. Each tap turns the card half a rotation; the face shown is
-    /// `tapCount % 3`, alternating between the physical front and back of the card.
+    /// `faces[tapCount % faces.count]`, alternating between the physical front and back.
     @State private var tapCount = 0
+
+    private var trimmedNotes: String {
+        plant.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// The sides of this card in tap order. The notes side is only added when the plant
+    /// has notes.
+    private var faces: [Face] {
+        trimmedNotes.isEmpty ? [.photo, .dutch, .latin] : [.photo, .dutch, .latin, .notes]
+    }
 
     private var angle: Double { Double(tapCount) * 180 }
 
-    private var currentFace: Face { Face(rawValue: tapCount % 3)! }
+    private var currentFace: Face { faces[tapCount % faces.count] }
 
     /// The face that is turning away during the current flip stays on the hidden side so
     /// the user never sees content change mid-turn.
-    private var previousFace: Face { Face(rawValue: ((tapCount - 1) % 3 + 3) % 3)! }
+    private var previousFace: Face {
+        let count = faces.count
+        return faces[((tapCount - 1) % count + count) % count]
+    }
 
     private var frontFace: Face { tapCount.isMultiple(of: 2) ? currentFace : previousFace }
     private var backFace: Face { tapCount.isMultiple(of: 2) ? previousFace : currentFace }
@@ -120,6 +134,7 @@ private struct FlashcardView: View {
         case .photo: return "Photo of a plant"
         case .dutch: return "Dutch name: \(plant.dutchName)"
         case .latin: return "Latin name: \(plant.latinName)"
+        case .notes: return "Notes: \(trimmedNotes)"
         }
     }
 
@@ -142,9 +157,46 @@ private struct FlashcardView: View {
                 caption: "Latin name",
                 name: plant.latinName,
                 background: Color(hex: "#1F5E3D"),
-                hint: "Tap to go back to the photo",
+                hint: trimmedNotes.isEmpty ? "Tap to go back to the photo" : "Tap for your notes",
                 italic: true
             )
+        case .notes:
+            notesFace
+        }
+    }
+
+    /// The student's notes on a dark green side, scrollable when they don't fit.
+    private var notesFace: some View {
+        ZStack {
+            Color(hex: "#173F2B")
+
+            VStack(spacing: 0) {
+                Text("NOTES")
+                    .font(.caption.weight(.bold))
+                    .tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(.top, 22)
+                    .padding(.bottom, 12)
+
+                ScrollView {
+                    Text(trimmedNotes)
+                        .font(.system(size: 19, weight: .regular, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineSpacing(4)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 12)
+                }
+                .scrollIndicators(.visible)
+                .scrollBounceBehavior(.basedOnSize)
+
+                Text("Tap to go back to the photo")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
+            }
         }
     }
 
