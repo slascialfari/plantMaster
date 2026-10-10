@@ -29,6 +29,8 @@ targets:
       path: plantMaster/Info.plist
       properties:
         CFBundleDisplayName: Herbarius
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen: {}
         NSCameraUsageDescription: "Herbarius uses the camera to take reference photos of plants you're studying."
