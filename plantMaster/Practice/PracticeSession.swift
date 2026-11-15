@@ -55,14 +55,15 @@ final class PracticeSession {
     }
 
     var lastAnswerWasCorrect: Bool {
-        latinCorrect && (!mode.asksDutchName || dutchCorrect)
+        latinCorrect && dutchCorrect
     }
 
     /// Whether the current answer can be submitted: every asked field has something in it.
     var canSubmit: Bool {
         let latinFilled = !typedLatin.trimmingCharacters(in: .whitespaces).isEmpty
         let dutchFilled = !typedDutch.trimmingCharacters(in: .whitespaces).isEmpty
-        return latinFilled && (!mode.asksDutchName || dutchFilled)
+        let asksDutch = currentQuestion?.asksDutchName ?? false
+        return latinFilled && (!asksDutch || dutchFilled)
     }
 
     func start(mode: PracticeMode, with activatedPlants: [Plant]) {
@@ -81,7 +82,7 @@ final class PracticeSession {
         let target = question.target
 
         latinCorrect = StringNormalization.matchesAny(typedLatin, target.latinName)
-        dutchCorrect = mode.asksDutchName ? StringNormalization.matchesAny(typedDutch, target.dutchName) : true
+        dutchCorrect = question.asksDutchName ? StringNormalization.matchesAny(typedDutch, target.dutchName) : true
         hasAnswered = true
 
         if question.isRetry {

@@ -2,19 +2,20 @@ import SwiftUI
 import SwiftData
 
 /// Sheet for choosing the Handpicked practice set: whole categories or single plants.
-/// Only plants with a photo are listed, since only those can be practised.
+/// Only plants with a photo in the selected period are listed, since only those can be
+/// practised there. Picks in other periods are kept but not shown.
 struct HandpickedSelectionView: View {
+    let period: PeriodSelection
+
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Plant.index) private var plants: [Plant]
 
     private var activated: [Plant] {
-        plants.filter(\.isActivated)
+        plants.filter { $0.isActivated && period.includes($0) }
     }
 
-    private var groups: [(category: Category?, plants: [Plant])] {
-        Dictionary(grouping: activated) { $0.category }
-            .sorted { ($0.key?.sortOrder ?? Int.max) < ($1.key?.sortOrder ?? Int.max) }
-            .map { (category: $0.key, plants: $0.value.sorted { $0.index < $1.index }) }
+    private var sections: [PlantSection] {
+        PlantSections.make(from: activated, labelPeriods: period == .all)
     }
 
     private var selectedCount: Int {
@@ -25,17 +26,27 @@ struct HandpickedSelectionView: View {
         NavigationStack {
             List {
                 if activated.isEmpty {
-                    Text("Add a photo to a plant to be able to pick it.")
+                    Text(period == .all
+                         ? "Add a photo to a plant to be able to pick it."
+                         : "Add a photo to a plant in \(period.label) to be able to pick it.")
                         .foregroundStyle(.secondary)
                 }
 
-                ForEach(groups, id: \.category?.persistentModelID) { group in
+                ForEach(sections) { section in
                     Section {
-                        ForEach(group.plants) { plant in
+                        ForEach(section.plants) { plant in
                             plantRow(plant)
                         }
                     } header: {
-                        categoryHeader(group.category, plants: group.plants)
+                        VStack(alignment: .leading, spacing: 8) {
+                            if section.showsPeriod, let studyPeriod = section.period {
+                                Text(studyPeriod.title)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                    .textCase(nil)
+                            }
+                            categoryHeader(section.category, plants: section.plants)
+                        }
                     }
                 }
             }
@@ -52,7 +63,7 @@ struct HandpickedSelectionView: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text("Handpicked").font(.headline)
-                        Text(selectedCount == 1 ? "1 plant selected" : "\(selectedCount) plants selected")
+                        Text(subtitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -63,6 +74,11 @@ struct HandpickedSelectionView: View {
                 }
             }
         }
+    }
+
+    private var subtitle: String {
+        let count = selectedCount == 1 ? "1 plant selected" : "\(selectedCount) plants selected"
+        return period == .all ? count : "\(period.label) · \(count)"
     }
 
     // MARK: - Rows
@@ -77,9 +93,11 @@ struct HandpickedSelectionView: View {
                     Text(plant.latinName)
                         .italic()
                         .foregroundStyle(.primary)
-                    Text(plant.dutchName)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    if plant.hasDutchName {
+                        Text(plant.dutchName)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
                 if plant.isKnown {

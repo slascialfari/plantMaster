@@ -7,6 +7,7 @@ struct PracticeView: View {
     @State private var hasStarted = false
     @State private var flashcardPlants: [Plant]? = nil
     @AppStorage("practiceFilter") private var filter: PracticeFilter = .learning
+    @AppStorage(PeriodSelection.storageKey) private var periodRaw = PeriodSelection.defaultRawValue
     @State private var isChoosingHandpicked = false
 
     /// Which plants the exercises draw from.
@@ -29,8 +30,21 @@ struct PracticeView: View {
         }
     }
 
+    private var period: PeriodSelection {
+        PeriodSelection(rawValue: periodRaw)
+    }
+
+    /// Photographed plants in the selected period. The filter narrows these further.
     private var activatedPlants: [Plant] {
-        allPlants.filter { $0.isActivated }
+        allPlants.filter { $0.isActivated && period.includes($0) }
+    }
+
+    /// "in Y1·T2" for one period, "" for All, to make the landing messages specific.
+    private var periodSuffix: String {
+        switch period {
+        case .period(let studyPeriod): return " in \(studyPeriod.shortLabel)"
+        case .all: return ""
+        }
     }
 
     private var knownCount: Int {
@@ -101,7 +115,7 @@ struct PracticeView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isChoosingHandpicked) {
-                HandpickedSelectionView()
+                HandpickedSelectionView(period: period)
             }
         }
     }
@@ -136,6 +150,9 @@ struct PracticeView: View {
 
     private var landing: some View {
         VStack(spacing: 16) {
+            PeriodPicker()
+                .padding(.horizontal, -16)
+
             if !activatedPlants.isEmpty {
                 Picker("Plants to practise", selection: $filter) {
                     ForEach(PracticeFilter.allCases) { option in
@@ -174,14 +191,14 @@ struct PracticeView: View {
 
     private var landingMessage: String {
         if activatedPlants.isEmpty {
-            return "Add a photo to at least one plant before you can practice."
+            return "Add a photo to at least one plant\(periodSuffix) before you can practice."
         }
         if practicePlants.isEmpty {
             switch filter {
             case .handpicked:
-                return "No plants picked yet. Choose the categories or plants you want to practise."
+                return "No plants picked\(periodSuffix) yet. Choose the categories or plants you want to practise."
             case .learning:
-                return "All your plants are marked as known. Switch to All to practise them."
+                return "All your plants\(periodSuffix) are marked as known. Choose the All filter to practise them."
             case .all:
                 return ""
             }

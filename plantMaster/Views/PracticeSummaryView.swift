@@ -31,10 +31,10 @@ struct PracticeSummaryView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             answerLine(correct: miss.latinCorrect, answer: miss.plant.latinName, typed: miss.typedLatin)
                                 .italic()
-                            if session.mode.asksDutchName {
+                            if session.mode.asksDutchName && miss.plant.hasDutchName {
                                 answerLine(correct: miss.dutchCorrect, answer: miss.plant.dutchName, typed: miss.typedDutch)
                                     .font(.subheadline)
-                            } else {
+                            } else if miss.plant.hasDutchName {
                                 Text(miss.plant.dutchName)
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)

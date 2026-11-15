@@ -43,9 +43,11 @@ struct PlantRow: View {
                 Text(plant.latinName)
                     .font(.body.weight(.semibold))
                     .italic()
-                Text(plant.dutchName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                if plant.hasDutchName {
+                    Text(plant.dutchName)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()

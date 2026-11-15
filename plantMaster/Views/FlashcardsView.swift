@@ -85,10 +85,14 @@ private struct FlashcardView: View {
         plant.notes.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// The sides of this card in tap order. The notes side is only added when the plant
-    /// has notes.
+    /// The sides of this card in tap order. The Dutch side is left out when the plant has
+    /// no Dutch name, and the notes side is only added when the plant has notes.
     private var faces: [Face] {
-        trimmedNotes.isEmpty ? [.photo, .dutch, .latin] : [.photo, .dutch, .latin, .notes]
+        var faces: [Face] = plant.hasDutchName ? [.photo, .dutch, .latin] : [.photo, .latin]
+        if !trimmedNotes.isEmpty {
+            faces.append(.notes)
+        }
+        return faces
     }
 
     private var angle: Double { Double(tapCount) * 180 }
@@ -220,7 +224,7 @@ private struct FlashcardView: View {
                 }
             }
 
-            Text("Tap to reveal the Dutch name")
+            Text(plant.hasDutchName ? "Tap to reveal the Dutch name" : "Tap to reveal the Latin name")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12)

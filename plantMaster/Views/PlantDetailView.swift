@@ -7,7 +7,6 @@ struct PlantDetailView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var isEditing = false
-    @State private var isShowingMap = false
 
     var body: some View {
         ScrollView {
@@ -18,9 +17,11 @@ struct PlantDetailView: View {
                     Text("\(plant.index). \(plant.latinName)")
                         .font(.title2.weight(.semibold))
                         .italic()
-                    Text(plant.dutchName)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                    if plant.hasDutchName {
+                        Text(plant.dutchName)
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
                     if let category = plant.category {
                         Text(category.name)
                             .font(.subheadline.weight(.semibold))
@@ -64,14 +65,8 @@ struct PlantDetailView: View {
                     }
                 }
                 .padding(.horizontal)
-
-                mapSection
-                    .padding(.horizontal)
             }
             .padding(.vertical)
-        }
-        .fullScreenCover(isPresented: $isShowingMap) {
-            PlantMapSheet(plant: plant, isEditing: isEditing)
         }
         .navigationTitle("Plant Detail")
         .navigationBarTitleDisplayMode(.inline)
@@ -80,61 +75,6 @@ struct PlantDetailView: View {
                 Button(isEditing ? "Done" : "Edit") {
                     isEditing.toggle()
                 }
-            }
-        }
-    }
-
-    private var pinMarkers: [MapPinMarker] {
-        let color = plant.category.map { Color(hex: $0.colorHex) } ?? AppTheme.brandGreen
-        return plant.sortedPins.map { pin in
-            MapPinMarker(id: pin.persistentModelID, x: pin.x, y: pin.y, label: "\(plant.index)", color: color)
-        }
-    }
-
-    private var mapSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Map")
-                    .font(.headline)
-                Spacer()
-                Text(plant.pins.count == 1 ? "1 pin" : "\(plant.pins.count) pins")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                isShowingMap = true
-            } label: {
-                MapCanvasView(markers: pinMarkers, isInteractive: false)
-                    .frame(height: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.3))
-                    )
-                    .overlay(alignment: .bottomTrailing) {
-                        Image(systemName: isEditing ? "mappin.and.ellipse" : "arrow.up.left.and.arrow.down.right")
-                            .font(.caption.weight(.semibold))
-                            .padding(8)
-                            .background(.regularMaterial, in: Circle())
-                            .padding(8)
-                    }
-            }
-            .buttonStyle(.plain)
-
-            if isEditing {
-                Button {
-                    isShowingMap = true
-                } label: {
-                    Label("Edit pins on map", systemImage: "mappin.and.ellipse")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(AppTheme.brandGreen)
-            } else if plant.pins.isEmpty {
-                Text("No pins yet. Tap Edit to place this plant on the map.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
     }

@@ -31,14 +31,14 @@ struct PracticeQuestionView: View {
 
             photos
 
-            if question.mode.showsDutchName {
+            if question.showsDutchName {
                 Text(question.target.dutchName)
                     .font(.title.weight(.semibold))
                     .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 12) {
-                if question.mode.asksDutchName {
+                if question.asksDutchName {
                     answerField(
                         placeholder: "Type the Dutch name",
                         text: Binding(get: { session.typedDutch }, set: { session.typedDutch = $0 }),
@@ -81,11 +81,11 @@ struct PracticeQuestionView: View {
         }
         .padding()
         .onAppear {
-            focusedField = question.mode.asksDutchName ? .dutch : .latin
+            focusedField = question.asksDutchName ? .dutch : .latin
             PhotoRotation.markShown(question.photo)
         }
         .onChange(of: question.id) { _, _ in
-            focusedField = question.mode.asksDutchName ? .dutch : .latin
+            focusedField = question.asksDutchName ? .dutch : .latin
             PhotoRotation.markShown(question.photo)
             selectedPhotoID = question.photo?.persistentModelID
         }

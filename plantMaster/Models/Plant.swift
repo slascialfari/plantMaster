@@ -3,7 +3,11 @@ import SwiftData
 
 @Model
 final class Plant {
+    /// Number on the school's list. Unique within a period, not across periods.
     var index: Int
+    /// The `StudyPeriod` this plant is studied in. Plants saved before periods existed were
+    /// all from Year 1 · Trimester 1, hence the default.
+    var periodID: String = "y1t1"
     var latinName: String
     var dutchName: String
     var notes: String
@@ -20,6 +24,16 @@ final class Plant {
     @Relationship(deleteRule: .cascade, inverse: \PlantPin.plant)
     var pins: [PlantPin] = []
 
+    var period: StudyPeriod? {
+        StudyPeriod.with(id: periodID)
+    }
+
+    /// False for the few plants whose school list gives no Dutch name ("-"). Those are
+    /// stored with an empty Dutch name and never asked for one in practice.
+    var hasDutchName: Bool {
+        !dutchName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var isActivated: Bool {
         !photos.isEmpty
     }
@@ -32,8 +46,16 @@ final class Plant {
         pins.sorted { $0.createdAt < $1.createdAt }
     }
 
-    init(index: Int, latinName: String, dutchName: String, notes: String = "", category: Category? = nil) {
+    init(
+        index: Int,
+        periodID: String = StudyPeriod.y1t1.id,
+        latinName: String,
+        dutchName: String,
+        notes: String = "",
+        category: Category? = nil
+    ) {
         self.index = index
+        self.periodID = periodID
         self.latinName = latinName
         self.dutchName = dutchName
         self.notes = notes

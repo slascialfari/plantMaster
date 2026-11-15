@@ -4,8 +4,18 @@ import SwiftData
 struct PlantListView: View {
     @Query(sort: \Plant.index) private var plants: [Plant]
 
+    @AppStorage(PeriodSelection.storageKey) private var periodRaw = PeriodSelection.defaultRawValue
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
+
+    private var period: PeriodSelection {
+        PeriodSelection(rawValue: periodRaw)
+    }
+
+    /// The selected period's plants, before search.
+    private var periodPlants: [Plant] {
+        plants.filter { period.includes($0) }
+    }
 
     /// Plants whose Latin or Dutch name has a word starting with the search text, or whose list
     /// number matches. "cer" finds "Cercis" but not "Acer". Case, accents, quotes and the
@@ -15,11 +25,11 @@ struct PlantListView: View {
         guard !query.isEmpty else {
             let trimmed = searchText.trimmingCharacters(in: .whitespaces)
             if let number = Int(trimmed) {
-                return plants.filter { $0.index == number }
+                return periodPlants.filter { $0.index == number }
             }
-            return plants
+            return periodPlants
         }
-        return plants.filter { plant in
+        return periodPlants.filter { plant in
             Self.hasWord(startingWith: query, in: plant.latinName)
                 || Self.hasWord(startingWith: query, in: plant.dutchName)
         }
@@ -30,13 +40,8 @@ struct PlantListView: View {
         return normalized.hasPrefix(query) || normalized.contains(" " + query)
     }
 
-    private var groupedByCategory: [(category: Category?, plants: [Plant])] {
-        let groups = Dictionary(grouping: filteredPlants) { $0.category }
-        return groups
-            .sorted { lhs, rhs in
-                (lhs.key?.sortOrder ?? Int.max) < (rhs.key?.sortOrder ?? Int.max)
-            }
-            .map { (category: $0.key, plants: $0.value.sorted { $0.index < $1.index }) }
+    private var sections: [PlantSection] {
+        PlantSections.make(from: filteredPlants, labelPeriods: period == .all)
     }
 
     var body: some View {
@@ -44,14 +49,17 @@ struct PlantListView: View {
             VStack(spacing: 0) {
                 AppHeaderBar(title: "My Plants")
 
+                PeriodPicker()
+                    .padding(.bottom, 10)
+
                 searchField
                     .padding(.horizontal)
                     .padding(.bottom, 8)
 
                 List {
-                    ForEach(groupedByCategory, id: \.category?.persistentModelID) { group in
+                    ForEach(sections) { section in
                         Section {
-                            ForEach(group.plants) { plant in
+                            ForEach(section.plants) { plant in
                                 NavigationLink {
                                     PlantDetailView(plant: plant)
                                 } label: {
@@ -59,10 +67,7 @@ struct PlantListView: View {
                                 }
                             }
                         } header: {
-                            if let category = group.category {
-                                Text(category.name.uppercased())
-                                    .foregroundStyle(Color(hex: category.colorHex))
-                            }
+                            PlantSectionHeader(section: section)
                         }
                     }
                 }

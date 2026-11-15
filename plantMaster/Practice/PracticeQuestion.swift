@@ -63,6 +63,17 @@ struct PracticeQuestion: Identifiable {
     /// random order fixed for this question so they don't move while it's on screen.
     let examPhotos: [PlantPhoto]
 
+    /// Whether this question asks for the Dutch name: only in modes that do, and only when
+    /// the plant has one.
+    var asksDutchName: Bool {
+        mode.asksDutchName && target.hasDutchName
+    }
+
+    /// Whether the Dutch name is shown as the prompt.
+    var showsDutchName: Bool {
+        mode.showsDutchName && target.hasDutchName
+    }
+
     init(mode: PracticeMode, target: Plant, isRetry: Bool = false) {
         self.mode = mode
         self.target = target
